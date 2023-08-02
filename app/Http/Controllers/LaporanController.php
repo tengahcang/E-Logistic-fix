@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Barang;
 use App\Models\Laporan;
 use Illuminate\Http\Request;
-use PhpParser\Node\Expr\New_;
+use Illuminate\Support\Facades\Validator;
+
+use RealRashid\SweetAlert\Facades\Alert;
 
 class LaporanController extends Controller
 {
@@ -14,7 +16,9 @@ class LaporanController extends Controller
      */
     public function index()
     {
-        //
+        return view('laporan.index',[
+            // 'laporan' => $data
+        ]);
     }
 
     /**
@@ -35,16 +39,30 @@ class LaporanController extends Controller
      */
     public function store(Request $request)
     {
-        $file=$request->file("Foto");
-        $endcripsen=$file->hashName();
-        $file->store("public/files");
-        $laporan= New Laporan;
-        $laporan->user_id=$request->Nama;
-        $laporan->barang_id=$request->Alat;
-        $laporan->descripsi=$request->Deskripsi;
-        $laporan->foto=$endcripsen;
+        $messages = [
+            'required' => ':colom harus diisi',
+            'image' => ':isi dengan format foto'
+        ];
+        $validator = Validator::make($request->all(),[
+            // 'Nama' => 'required',
+            'Alat' => 'required',
+            'Deskripsi' => 'required',
+            'Foto' => 'required|image'
+        ],$messages);
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+        $file = $request->file('Foto');
+        $encryptedFilename = $file->hashName();
+        $file->store('public/files');
+        $laporan = New Laporan;
+        $laporan->user_id = $request->Nama;
+        $laporan->barang_id = $request->Alat;
+        $laporan->descripsi = $request->Deskripsi;
+        $laporan->foto = $encryptedFilename;
         $laporan->save();
-        return redirect()->route("home");
+        Alert::success('Added Successfully', 'Laporan Data Added Successfully.');
+        return redirect()->route('home');
     }
 
     /**
@@ -77,5 +95,18 @@ class LaporanController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+    public function getData(Request $request)
+    {
+        $data = Laporan::with(['barang','user']);
+
+        if ($request->ajax()) {
+            return datatables()->of($data)
+                ->addIndexColumn()
+                ->addColumn('actions', function($lapor) {
+                    return view('laporan.actions', compact('lapor'));
+                })
+                ->toJson();
+            }
     }
 }

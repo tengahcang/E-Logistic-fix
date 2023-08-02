@@ -22,6 +22,8 @@
 
         <main class="py-4">
             @yield('content')
+            @stack('scripts')
+            @include('sweetalert::alert')
         </main>
     </div>
 </body>
