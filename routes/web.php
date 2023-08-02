@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\LaporanController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,9 +16,13 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 });
 
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::group(["middleware"=>"auth"],function(){
+    Route::resource("laporan", LaporanController::class);
+
+});
